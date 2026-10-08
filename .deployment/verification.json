@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "sourceSHA": "0a3b8f93bf362d6a82535bda4ec2064b4ecd399c",
+  "url": "https://rawcdn.githack.com/Achyuth777/SupplyLens/0a3b8f93bf362d6a82535bda4ec2064b4ecd399c/index.html",
+  "verifiedAt": "2026-10-08T05:32:04.013801+00:00",
+  "httpStatus": 200,
+  "sourceSha256": "66fe5c774f19ff85cd49898cc80ec54ff76e7baf51668aa0b7192aa2b5df7030",
+  "responseSha256": "66fe5c774f19ff85cd49898cc80ec54ff76e7baf51668aa0b7192aa2b5df7030",
+  "sourceMarkerPresent": true,
+  "responseMarkerPresent": true
+}
