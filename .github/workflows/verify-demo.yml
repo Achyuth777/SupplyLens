@@ -1,0 +1,114 @@
+name: Verify public SupplyLens demo
+
+on:
+  push:
+    branches: [supplylens-demo]
+    paths: [index.html]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: supplylens-demo-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out the published demo revision
+        # actions/checkout v6; credentials are managed by the official action.
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - name: Fetch the public CDN page and record its result
+        env:
+          DEMO_REPOSITORY: ${{ github.repository }}
+          DEMO_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+
+          source = pathlib.Path("index.html").read_bytes()
+          source_sha = os.environ["DEMO_SOURCE_SHA"]
+          url = f"https://rawcdn.githack.com/{os.environ['DEMO_REPOSITORY']}/{source_sha}/index.html"
+          destination = pathlib.Path(os.environ["RUNNER_TEMP"]) / "supplylens-public-demo.html"
+          marker = b'data-supplylens-demo="interactive-v1"'
+          try:
+              result = subprocess.run(
+                  [
+                      "curl", "--fail", "--location", "--silent", "--show-error",
+                      "--retry", "4", "--retry-all-errors", "--retry-delay", "5",
+                      "--retry-max-time", "100", "--connect-timeout", "10",
+                      "--max-time", "20", "--output", str(destination),
+                      "--write-out", "%{http_code}", url,
+                  ],
+                  text=True,
+                  capture_output=True,
+                  timeout=140,
+              )
+              return_code = result.returncode
+              http_status = int(result.stdout) if result.stdout.isdigit() else None
+              request_error = result.stderr.strip()[:1200]
+          except subprocess.TimeoutExpired:
+              return_code = 124
+              http_status = None
+              request_error = "Public demo request exceeded the 140-second verification budget."
+          response = destination.read_bytes() if destination.exists() else b""
+          source_digest = hashlib.sha256(source).hexdigest()
+          response_digest = hashlib.sha256(response).hexdigest() if response else None
+          source_marker_present = marker in source and b"SupplyLens" in source
+          response_marker_present = marker in response and b"SupplyLens" in response
+          success = (
+              return_code == 0
+              and http_status == 200
+              and source_digest == response_digest
+              and source_marker_present
+              and response_marker_present
+          )
+          verification = {
+              "status": "success" if success else "failed",
+              "sourceSHA": source_sha,
+              "url": url,
+              "verifiedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "httpStatus": http_status,
+              "sourceSha256": source_digest,
+              "responseSha256": response_digest,
+              "sourceMarkerPresent": source_marker_present,
+              "responseMarkerPresent": response_marker_present,
+          }
+          if not success:
+              verification["error"] = request_error or "Public response did not exactly match the published demo."
+          output = pathlib.Path(".deployment/verification.json")
+          output.parent.mkdir(exist_ok=True)
+          output.write_text(json.dumps(verification, indent=2) + "\n")
+          print(json.dumps(verification, indent=2))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"Public demo verification: **{verification['status']}**\n\n")
+              summary.write(f"[Open the demo]({url})\n\n")
+              summary.write("RawGithack may ask browser visitors to select **Open the page** before showing HTML.\n")
+          PY
+
+      - name: Publish the verification record
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- .deployment/verification.json
+          git commit -m "Record public demo verification [skip ci]"
+          git push origin HEAD:refs/heads/supplylens-demo
+
+      - name: Require a verified public response
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          record = json.loads(pathlib.Path(".deployment/verification.json").read_text())
+          sys.exit(0 if record["status"] == "success" else 1)
+          PY
