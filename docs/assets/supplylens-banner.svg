@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
+<title id="title">SupplyLens — see what's next</title><desc id="desc">Supply chain intelligence. Inventory, demand, procurement and disruption planning.</desc>
+<defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#25392e" stroke-width="1"/></pattern></defs>
+<rect width="1280" height="420" rx="18" fill="#132219"/><rect x="740" width="540" height="420" fill="url(#grid)"/>
+<path d="M73 46 48 79h19l-7 22 32-38H72Z" fill="#d2ff00"/>
+<text x="104" y="83" fill="#f1f6ef" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-style="italic" font-size="35" letter-spacing="-1.2">supplylens</text>
+<text x="54" y="179" fill="#f1f6ef" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="62" letter-spacing="-2">SEE WHAT’S NEXT.</text>
+<text x="54" y="248" fill="#d2ff00" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="62" letter-spacing="-2">MOVE AHEAD.</text>
+<text x="57" y="295" fill="#b5c8ba" font-family="Arial,Helvetica,sans-serif" font-size="18">Predictive supply chain intelligence. Built to be understood.</text>
+<path d="M57 329h637" stroke="#38533f"/><text x="57" y="363" fill="#b5c8ba" font-family="Arial,Helvetica,sans-serif" font-size="12" letter-spacing="2">INVENTORY / DEMAND / PROCUREMENT / SIMULATION</text>
+<g transform="translate(840 75)"><rect width="330" height="104" rx="10" fill="#213b2b" stroke="#4a6852"/><circle cx="27" cy="29" r="5" fill="#d2ff00"/><text x="42" y="33" font-family="Arial,sans-serif" font-size="12" fill="#cee0d1" letter-spacing="1">SEE THE SIGNAL</text><path d="M23 83 66 67 103 75 147 46 185 57 230 40 272 46 306 24" fill="none" stroke="#d2ff00" stroke-width="3"/>
+<path d="M164 105v27" stroke="#91b09a" stroke-width="2" stroke-dasharray="4 4"/>
+<rect y="136" width="330" height="64" rx="10" fill="#e9f3df"/><text x="22" y="175" font-family="Arial,sans-serif" font-weight="700" font-size="17" fill="#203725">TEST THE DISRUPTION</text><path d="m287 155 13 13-13 13m-14-13h25" fill="none" stroke="#203725" stroke-width="2"/>
+<path d="M164 201v27" stroke="#91b09a" stroke-width="2" stroke-dasharray="4 4"/>
+<rect y="232" width="330" height="64" rx="10" fill="#d2ff00"/><text x="22" y="271" font-family="Arial,sans-serif" font-weight="700" font-size="17" fill="#203725">MAKE THE NEXT MOVE</text><path d="m282 264 8 8 15-18" fill="none" stroke="#203725" stroke-width="3"/></g></svg>
