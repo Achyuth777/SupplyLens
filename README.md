@@ -9,6 +9,8 @@
 <p align="center">
   <a href="https://supplylens-intelligence.achyuthpvvirat.chatgpt.site"><strong>Explore the live app ↗</strong></a>
   &nbsp; · &nbsp;
+  <a href="https://supplylens-intelligence.achyuthpvvirat.chatgpt.site/about">About the project</a>
+  &nbsp; · &nbsp;
   <a href="#a-two-minute-product-tour">Product tour</a>
   &nbsp; · &nbsp;
   <a href="#run-it-locally">Get started</a>
