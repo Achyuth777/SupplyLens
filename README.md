@@ -239,3 +239,11 @@ For a bug report, include the affected screen, reproduction steps, expected beha
 Built by [Achyuth PV](https://github.com/Achyuth777). The visual direction draws on [Flash — Logistics Branding](https://www.behance.net/gallery/236559247/Flash-Logistics-Branding); SupplyLens uses its own branding and interface illustration. Third-party code retains its accompanying license notices.
 
 No project-wide open-source license has been selected. Repository visibility does not grant a general license to reuse the application; contact the maintainer about permissions.
+
+### Find records and review changes
+
+Use **Search workspace** in the top bar, or **Ctrl/Cmd + K**, to find pages, active products by name/SKU, suppliers, purchase orders, and saved scenarios. Use the arrow keys and Enter to open a result. Product results open the editor; supplier and order results show the matching record.
+
+**Activity history** in the sidebar records new saved changes with the authenticated account name/email, timestamp, workspace revision, and expandable before/after field values. Filter by action or search for a person or record. Receipt events include the associated inventory and supplier updates. Existing records remain compatible; changes before this feature was introduced are not reconstructed.
+
+Events are stored with the workspace aggregate in the same revision-checked database write. This is operational history, not a separate tamper-evident compliance archive; database administrators can still modify stored records. Large-scale audit retention should move to a dedicated, paginated event store as the product grows.

@@ -3,7 +3,7 @@ export type Supplier={id:string;name:string;location:string;deliveries:{expected
 export type Order={id:string;supplier:string;items:{product:string;quantity:number;cost:number}[];status:'Draft'|'Ordered'|'Received';created:string;expected:string;received?:string};
 export type Movement={id:string;product:string;quantity:number;reason:string;date:string};
 export type Scenario={id:string;name:string;product:string;delay:number;surge:number;capacity:number;transport:number;stock:number;safety:number};
-export type State={products:Product[];suppliers:Supplier[];orders:Order[];movements:Movement[];scenarios:Scenario[];read:string[];settings:{organization:string;name:string;notifications:boolean}};
+export type State={activity?:import("./activity").ActivityEvent[];products:Product[];suppliers:Supplier[];orders:Order[];movements:Movement[];scenarios:Scenario[];read:string[];settings:{organization:string;name:string;notifications:boolean}};
 export const avg=(a:number[])=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
 export function forecast(a:number[],horizon=30){if(!a.length)return {daily:0,values:Array(horizon).fill(0),mae:0};let level=a[0],errors:number[]=[];for(let i=1;i<a.length;i++){errors.push(Math.abs(a[i]-level));level=.3*a[i]+.7*level;}return {daily:level,values:Array.from({length:horizon},()=>level),mae:avg(errors.slice(-14))};}
 export function inventory(p:Product,incoming=0){const demand=forecast(p.history).daily;const point=Math.ceil(demand*p.lead+p.safety);return {demand,point,days:demand?p.stock/demand:Infinity,quantity:Math.max(0,Math.ceil(demand*(p.lead+30)+p.safety-p.stock-incoming)),risk:p.stock<demand*p.lead?'Critical':p.stock<=point?'Reorder':'Healthy'};}
