@@ -86,3 +86,12 @@ test('configuration diagnostic names only missing runtime bindings, never secret
   const html=await result.response.text();assert.ok(html.includes(name));assert.ok(html.includes('Configuration check v2'));assert.ok(!html.includes('private-value'));
  }
 });
+
+test('callback diagnostics distinguish browser state from Google credential rejection without leaking secrets',async()=>{
+ const env={DB:database(),GOOGLE_CLIENT_ID:'client',GOOGLE_CLIENT_SECRET:'secret'};
+ let f=await flow(env);
+ let r=await authenticate(request(f.callback),env);assert.match(await r.response.text(),/login_cookie_missing/);
+ f=await flow(env);
+ r=await authenticate(request(f.callback,{headers:{cookie:f.browser}}),env,async()=>Response.json({error:'invalid_client',error_description:'secret must never appear'}, {status:401}));
+ const html=await r.response.text();assert.match(html,/invalid_client/);assert.ok(!html.includes('secret must never appear'));
+});

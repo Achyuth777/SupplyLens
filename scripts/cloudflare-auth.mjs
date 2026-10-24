@@ -45,7 +45,13 @@ async function initialize(db) {
 }
 async function googleJSON(url, init, fetcher) {
   const response = await fetcher(url, {...init, redirect: 'error', signal: AbortSignal.timeout(10000)});
-  if (!response.ok) throw new Error('Google authentication request failed');
+  if (!response.ok) {
+    const error = new Error('Google authentication request failed');
+    const body = await response.json().catch(() => ({}));
+    const allowed = ['invalid_client','invalid_grant','redirect_uri_mismatch','unauthorized_client','access_denied'];
+    error.oauthCode = allowed.includes(body.error) ? body.error : 'google_request_failed';
+    throw error;
+  }
   return response.json();
 }
 export async function verifyGoogleIDToken(token, clientId, nonce, fetcher = fetch, now = Math.floor(Date.now()/1000)) {
@@ -103,20 +109,37 @@ export async function authenticate(request, env, fetcher = fetch) {
     }
     if (callback) {
       const state=url.searchParams.get('state'), browser=cookie(clean,FLOW);
-      const fail = () => ({response:page('Sign-in could not be completed','<p>Your sign-in link expired, was cancelled, or could not be verified. Please try again.</p><a href="/auth/google">Try Google sign-in again</a>',400,[setCookie(FLOW,'',0)])});
-      if (!state || !/^[A-Za-z0-9_-]{43}$/.test(state) || !/^[A-Za-z0-9_-]{43}$/.test(browser)) return fail();
+      const fail = (code) => ({response:page('Sign-in could not be completed',`<p>Your sign-in could not be verified. Please start a fresh sign-in using the button below.</p><p>Diagnostic: <strong>${code}</strong></p><a href="/auth/google">Try Google sign-in again</a>`,400,[setCookie(FLOW,'',0)])});
+      if (!state || !/^[A-Za-z0-9_-]{43}$/.test(state)) return fail('state_missing');
+      if (!/^[A-Za-z0-9_-]{43}$/.test(browser)) return fail('login_cookie_missing');
       // DELETE RETURNING consumes this browser-bound state exactly once, even on concurrent callbacks.
       const flow=await env.DB.prepare('DELETE FROM auth_flows WHERE state_hash=? AND browser_hash=? AND expires>? RETURNING verifier,nonce,return_to').bind(await hash(state),await hash(browser),now).first();
-      if (!flow || url.searchParams.has('error') || !url.searchParams.get('code')) return fail();
+      if (!flow) return fail('state_expired_or_used');
+      if (url.searchParams.has('error')) return fail('google_consent_denied');
+      if (!url.searchParams.get('code')) return fail('authorization_code_missing');
+      let stage = 'google_token_exchange';
       try {
         const tokens=await googleJSON('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,client_secret:env.GOOGLE_CLIENT_SECRET,redirect_uri:CALLBACK,code:url.searchParams.get('code'),code_verifier:flow.verifier,grant_type:'authorization_code'})},fetcher);
+        stage = 'identity_verification';
         const user=await verifyGoogleIDToken(tokens.id_token,env.GOOGLE_CLIENT_ID,flow.nonce,fetcher,now);
+        stage = 'session_storage';
         const token=random();
         const old=cookie(clean,SESSION);
         if (old) await env.DB.prepare('DELETE FROM auth_sessions WHERE token_hash=?').bind(await hash(old)).run();
         await env.DB.prepare('INSERT INTO auth_sessions (token_hash,owner,email,name,expires) VALUES (?,?,?,?,?)').bind(await hash(token),user.owner,user.email,user.name,now+SESSION_SECONDS).run();
         return {response:redirect(safeReturn(flow.return_to),[setCookie(FLOW,'',0),setCookie(SESSION,token,SESSION_SECONDS)])};
-      } catch { return fail(); }
+      } catch (error) {
+        // Only static diagnostic labels leave the boundary, never provider bodies or tokens.
+        const labels = {
+          'Missing identity token':'id_token_missing',
+          'Invalid identity token':'id_token_format',
+          'Unsupported token signature':'id_token_algorithm',
+          'Unknown Google signing key':'google_signing_key',
+          'Invalid signature':'id_token_signature',
+          'Invalid Google identity claims':'id_token_claims',
+        };
+        return fail(error.oauthCode || (stage === 'identity_verification' && labels[error.message]) || stage);
+      }
     }
     if (logout) {
       if (clean.method === 'GET') return {response:page('Sign out of SupplyLens?', '<form method="post" action="/auth/logout"><button type="submit">Sign out</button></form><p><a href="/workspace">Return to workspace</a></p>')};
