@@ -81,7 +81,12 @@ export async function authenticate(request, env, fetcher = fetch) {
   if (!login && !callback && !logout && !protectedRoute) return {request:clean};
   if (url.origin !== ORIGIN) return {response:page('Address not supported', '<p>Please use the SupplyLens production address to sign in.</p>', 403)};
   if ((login || callback) && clean.method !== 'GET') return {response:new Response(null,{status:405,headers:{Allow:'GET'}})};
-  if (!env.DB || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return {response:page('Sign-in setup is incomplete', '<p>The owner needs to configure the Google credentials and database in Cloudflare.</p>',503)};
+  const missing = [
+    !env.DB?.prepare && 'DB (D1 database binding)',
+    !env.GOOGLE_CLIENT_ID && 'GOOGLE_CLIENT_ID (runtime variable)',
+    !env.GOOGLE_CLIENT_SECRET && 'GOOGLE_CLIENT_SECRET (runtime secret)',
+  ].filter(Boolean);
+  if (missing.length) return {response:page('Sign-in setup is incomplete', `<p>The running Worker cannot find:</p><ul>${missing.map(name => `<li>${name}</li>`).join('')}</ul><p>Open Workers &amp; Pages → supplylens → Settings → Variables and Secrets for credentials, or Bindings for DB. Build variables do not supply runtime secrets.</p><p><small>Configuration check v2</small></p>`,503)};
   try {
     const now = Math.floor(Date.now()/1000);
     if (login) {

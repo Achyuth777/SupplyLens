@@ -76,3 +76,13 @@ test('safe redirects, canonical origin and public header stripping',async()=>{
  assert.equal((await authenticate(new Request('https://evil.test/auth/google'),{})).response.status,403);
  assert.equal((await authenticate(request('/auth/google'),{})).response.status,503);
 });
+
+test('configuration diagnostic names only missing runtime bindings, never secret values',async()=>{
+ const env={DB:database(),GOOGLE_CLIENT_ID:'client',GOOGLE_CLIENT_SECRET:'private-value'};
+ for(const name of ['DB','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET']){
+  const incomplete={...env};delete incomplete[name];
+  const result=await authenticate(request('/auth/google'),incomplete);
+  assert.equal(result.response.status,503);
+  const html=await result.response.text();assert.ok(html.includes(name));assert.ok(html.includes('Configuration check v2'));assert.ok(!html.includes('private-value'));
+ }
+});
