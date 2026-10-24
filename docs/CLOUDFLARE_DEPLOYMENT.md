@@ -21,7 +21,7 @@ Save the settings and build the latest commit. Do not use bare `npx wrangler dep
 
 The independent Cloudflare build currently publishes the homepage and About page. Workspace and API routes return a clear setup-in-progress response with HTTP 503. This is intentional: Google OAuth and a database in the owner's Cloudflare account have not been configured yet.
 
-The standalone entrypoint removes incoming Sites identity headers. A direct Worker cannot trust visitor-supplied headers as authenticated identity. The build also removes the managed host's placeholder D1 binding. It does not copy or delete any existing workspace data.
+The standalone entrypoint removes incoming Sites identity headers. A direct Worker cannot trust visitor-supplied headers as authenticated identity. The build replaces the managed host's placeholder D1 binding with the owner's `supplylens-db` database. It does not copy or delete any existing workspace data.
 
 The original Sites build (`pnpm run build`) remains unchanged and uses the existing hosted identity and storage. This migration does not deploy to or modify that existing website.
 
@@ -34,3 +34,7 @@ The original Sites build (`pnpm run build`) remains unchanged and uses the exist
 5. Verify two different Google accounts cannot read or modify each other's workspaces before opening workspace access.
 
 Build and deploy success alone does **not** mean Google sign-in is finished.
+
+## Destination database
+
+The standalone build binds `DB` to `supplylens-db` (`acc8d0da-c3ff-42af-86b7-e699265e84e5`). After building, run `pnpm run db:setup:cloudflare` from an authenticated Cloudflare environment to create the workspace table without deleting existing records. Alternatively run `drizzle/cloudflare-bootstrap.sql` in the database dashboard Console. The Google authentication boundary remains closed.

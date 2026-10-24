@@ -14,9 +14,13 @@ if (config.main !== 'index.js') throw new Error('Unexpected Vinext entrypoint; r
 config.name = 'supplylens';
 config.main = 'cloudflare-entry.mjs';
 config.workers_dev = true;
-// This first migration stage publishes the public pages only. The Sites D1 ID
-// belongs to the managed host and must never be deployed to another account.
-config.d1_databases = [];
+// Bind the database created in the destination Cloudflare account.
+// Never reuse the managed Sites database identity.
+config.d1_databases = [{
+  binding: "DB",
+  database_name: "supplylens-db",
+  database_id: "acc8d0da-c3ff-42af-86b7-e699265e84e5",
+}];
 config.services = [];
 delete config.build;
 copyFileSync('scripts/cloudflare-entry.mjs', 'dist/server/cloudflare-entry.mjs');

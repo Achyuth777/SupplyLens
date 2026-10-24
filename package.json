@@ -15,7 +15,8 @@
     "test": "node scripts/test.mjs",
     "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "deploy:cloudflare": "wrangler deploy --config dist/server/wrangler.json",
-    "preview:cloudflare": "wrangler versions upload --config dist/server/wrangler.json"
+    "preview:cloudflare": "wrangler versions upload --config dist/server/wrangler.json",
+    "db:setup:cloudflare": "wrangler d1 execute DB --remote --config dist/server/wrangler.json --file drizzle/cloudflare-bootstrap.sql"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
