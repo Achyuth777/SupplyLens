@@ -44,7 +44,14 @@ async function initialize(db) {
   await db.batch(AUTH_SCHEMA.map(sql => db.prepare(sql)));
 }
 async function googleJSON(url, init, fetcher) {
-  const response = await fetcher(url, {...init, redirect: 'error', signal: AbortSignal.timeout(10000)});
+  const response = await fetcher(url, {...init, redirect: 'manual', signal: AbortSignal.timeout(10000)});
+  // Workers rejects redirect:'error' before sending the request. Manual mode
+  // prevents following a redirect with OAuth credentials; reject every 3xx here.
+  if (response.status >= 300 && response.status < 400) {
+    const error = new Error('Unexpected Google redirect');
+    error.oauthCode = 'google_redirect_rejected';
+    throw error;
+  }
   if (!response.ok) {
     const error = new Error('Google authentication request failed');
     const body = await response.json().catch(() => ({}));
