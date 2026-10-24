@@ -12,7 +12,10 @@
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
+    "deploy:cloudflare": "wrangler deploy --config dist/server/wrangler.json",
+    "preview:cloudflare": "wrangler versions upload --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

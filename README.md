@@ -247,3 +247,7 @@ Use **Search workspace** in the top bar, or **Ctrl/Cmd + K**, to find pages, act
 **Activity history** in the sidebar records new saved changes with the authenticated account name/email, timestamp, workspace revision, and expandable before/after field values. Filter by action or search for a person or record. Receipt events include the associated inventory and supplier updates. Existing records remain compatible; changes before this feature was introduced are not reconstructed.
 
 Events are stored with the workspace aggregate in the same revision-checked database write. This is operational history, not a separate tamper-evident compliance archive; database administrators can still modify stored records. Large-scale audit retention should move to a dedicated, paginated event store as the product grows.
+
+### Deploy to your own Cloudflare account
+
+See [Cloudflare deployment instructions](docs/CLOUDFLARE_DEPLOYMENT.md). Use `pnpm run build:cloudflare` and `pnpm run deploy:cloudflare` to bypass OpenNext auto-detection. This migration stage serves public pages; workspace access awaits Google sign-in and a destination D1 database.
