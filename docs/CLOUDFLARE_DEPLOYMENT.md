@@ -1,40 +1,43 @@
-# Deploying SupplyLens to your Cloudflare account
+# SupplyLens on Cloudflare Workers
 
-SupplyLens uses **Vinext + Vite**, which emits a Cloudflare Worker in `dist/server` and assets in `dist/client`. It is not a standard Next.js `.next` build. Wrangler's automatic OpenNext migration fails because `.next/server/middleware-manifest.json` does not exist.
-
-## Workers Builds settings
-
-In the `supplylens` Worker's Settings → Build, use:
+The independent deployment uses Vinext's Worker output, not OpenNext or `.next` manifests.
 
 | Setting | Value |
 | --- | --- |
-| Repository | `Achyuth777/SupplyLens` |
 | Production branch | `supplylens-demo` |
-| Root directory | `/` |
-| Build command | `pnpm run build:cloudflare` |
-| Deploy command | `pnpm run deploy:cloudflare` |
+| Project name | `supplylens` |
+| Build | `pnpm run build:cloudflare` |
+| Deploy | `pnpm run deploy:cloudflare` |
 | Preview command (if shown) | `pnpm run preview:cloudflare` |
+| Production origin | `https://supplylens.achyuthpvvirat.workers.dev` |
 
-Save the settings and build the latest commit. Do not use bare `npx wrangler deploy` before building, and do not add OpenNext. No new dependency or lockfile update is needed.
+## Credentials
 
-## Migration status: public pages only
+Create a Google OAuth Web application with the exact redirect URI:
 
-The independent Cloudflare build currently publishes the homepage and About page. Workspace and API routes return a clear setup-in-progress response with HTTP 503. This is intentional: Google OAuth and a database in the owner's Cloudflare account have not been configured yet.
+```text
+https://supplylens.achyuthpvvirat.workers.dev/auth/google/callback
+```
 
-The standalone entrypoint removes incoming Sites identity headers. A direct Worker cannot trust visitor-supplied headers as authenticated identity. The build replaces the managed host's placeholder D1 binding with the owner's `supplylens-db` database. It does not copy or delete any existing workspace data.
+The public Google client ID is included in the generated Worker configuration. Set `GOOGLE_CLIENT_SECRET` as a Cloudflare runtime **Secret**, never in a tracked file or build log. If the Google app has testing restrictions, add the intended users in Google Auth Platform's Audience settings.
 
-The original Sites build (`pnpm run build`) remains unchanged and uses the existing hosted identity and storage. This migration does not deploy to or modify that existing website.
+The standalone build binds `DB` to `supplylens-db` (`acc8d0da-c3ff-42af-86b7-e699265e84e5`). The existing `workspaces` table must exist. `pnpm run db:setup:cloudflare` can initialize it from an authenticated Cloudflare environment. Google login initializes its additive `auth_flows` and `auth_sessions` tables and expiry indexes automatically; no further SQL copy/paste is required.
 
-## Remaining work before workspace launch
+## Identity and sessions
 
-1. Create a D1 database in the destination Cloudflare account, bind it as `DB`, and apply the schema migrations.
-2. Configure a Google OAuth client for the confirmed deployed origin and callback route. Store the client secret in Cloudflare runtime secrets, never in GitHub or chat.
-3. Implement and verify server-side sessions, OAuth state/PKCE checks, sign-out, and per-user authorization. Then replace the temporary setup boundary.
-4. Plan explicit, verified account linking before importing old Sites workspaces. Google IDs and Sites IDs are different; do not infer ownership from a browser-supplied ID.
-5. Verify two different Google accounts cannot read or modify each other's workspaces before opening workspace access.
+Opening `/workspace` starts Google login. The existing `/signin-with-chatgpt` and `/signout-with-chatgpt` links are compatibility aliases on this deployment. Sign-out presents a confirmation and revokes the server session only on a same-origin POST.
 
-Build and deploy success alone does **not** mean Google sign-in is finished.
+The Worker strips visitor-supplied Sites identity headers. Only a valid, unexpired D1 session can populate the request-scoped identity consumed by the existing workspace routes. OAuth uses state, a separate browser cookie, PKCE S256, and nonce; callback state is consumed once with an atomic D1 delete. Google ID-token signatures, issuer, audience, expiry, nonce, and verified email are checked. Raw session tokens live in host-only Secure HttpOnly cookies; D1 stores SHA-256 token hashes. Sessions expire after seven days; pending logins expire after ten minutes. Expired rows are removed at login.
 
-## Destination database
+Google workspace owners are namespaced `google:<sub>`. Google accounts start fresh demo workspaces. Existing Sites workspaces are not copied, linked by email, or deleted. Never infer account ownership from browser-supplied IDs. Authenticated page and API responses use private/no-store cache headers.
 
-The standalone build binds `DB` to `supplylens-db` (`acc8d0da-c3ff-42af-86b7-e699265e84e5`). After building, run `pnpm run db:setup:cloudflare` from an authenticated Cloudflare environment to create the workspace table without deleting existing records. Alternatively run `drizzle/cloudflare-bootstrap.sql` in the database dashboard Console. The Google authentication boundary remains closed.
+`pnpm run build` retains the original Sites build path, identity, and storage. Only `build:cloudflare` adds this standalone boundary. Changing the production domain requires updating the canonical origin in `scripts/cloudflare-auth.mjs` and the Google redirect URI together.
+
+## Verification
+
+- `pnpm test`: existing domain, search, activity-history, and revision behavior.
+- `pnpm run test:auth`: signed-token checks, OAuth state and PKCE, replay rejection, expiry, sign-out, origin checks, and separate account identity using SQLite with stubbed Google responses.
+- `pnpm run build:cloudflare`: production package.
+- `pnpm exec wrangler deploy --config dist/server/wrangler.json --dry-run`: deploy packaging check.
+
+Real Google consent and browser/database behavior must still be verified on the deployed origin with the owner's runtime secret. Never describe stubbed OAuth tests as a completed live login.

@@ -24,6 +24,7 @@ config.d1_databases = [{
 config.services = [];
 delete config.build;
 copyFileSync('scripts/cloudflare-entry.mjs', 'dist/server/cloudflare-entry.mjs');
-copyFileSync('scripts/cloudflare-access.mjs', 'dist/server/cloudflare-access.mjs');
+copyFileSync('scripts/cloudflare-auth.mjs', 'dist/server/cloudflare-auth.mjs');
+config.vars = {...config.vars, GOOGLE_CLIENT_ID: '198142915986-nfbhd5odcajhgrok5u06tfol37a0reii.apps.googleusercontent.com'};
 writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-console.log('Cloudflare bundle ready: public pages enabled; workspace awaits Google authentication and D1 setup.');
+console.log('Cloudflare bundle ready: Google sign-in and D1 sessions enabled. GOOGLE_CLIENT_SECRET must be set as a runtime secret.');

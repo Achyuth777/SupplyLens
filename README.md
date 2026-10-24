@@ -250,4 +250,4 @@ Events are stored with the workspace aggregate in the same revision-checked data
 
 ### Deploy to your own Cloudflare account
 
-See [Cloudflare deployment instructions](docs/CLOUDFLARE_DEPLOYMENT.md). Use `pnpm run build:cloudflare` and `pnpm run deploy:cloudflare` to bypass OpenNext auto-detection. This migration stage serves public pages; workspace access awaits Google sign-in and a destination D1 database.
+See [Cloudflare deployment instructions](docs/CLOUDFLARE_DEPLOYMENT.md). Use `pnpm run build:cloudflare` and `pnpm run deploy:cloudflare` to bypass OpenNext auto-detection. The standalone deployment uses Google sign-in and D1-backed sessions; configure the Google runtime secret and registered callback as documented. Existing Sites workspaces remain separate.
